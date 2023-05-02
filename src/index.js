@@ -21,6 +21,7 @@ refs.searchForm.addEventListener('submit', e => {
 
   currentQuery = query;
   currentPage = 1;
+  window.addEventListener('scroll', onMoveScroll);
   fetchImages(currentQuery, currentPage)
     .then(data => {
       if (data.hits.length === 0) {
@@ -31,8 +32,14 @@ refs.searchForm.addEventListener('submit', e => {
         refs.loadMoreBtn.classList.add('hide');
         return;
       }
+      if (data.hits.length < 40) {
+        refs.loadMoreBtn.classList.add('hide');
+        Notify.info(
+          "We're sorry, but you've reached the end of search results."
+        );
+        window.removeEventListener('scroll', onMoveScroll);
+      }
       renderGallery(data.hits);
-      window.addEventListener('scroll', onMoveScroll);
     })
     .catch(error => {
       Notify.failure('Oops! Something went wrong. Please try again later.');
