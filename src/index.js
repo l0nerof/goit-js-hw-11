@@ -1,5 +1,6 @@
 import './css/styles.css';
 import { Notify } from 'notiflix';
+import { fetchImages } from './fetchImages';
 import axios from 'axios';
 
 const refs = {
@@ -20,29 +21,25 @@ refs.searchForm.addEventListener('submit', e => {
 
   currentQuery = query;
   currentPage = 1;
-  fetchImages(currentQuery, currentPage);
+  fetchImages(currentQuery, currentPage)
+    .then(data => {
+      if (data.hits.length === 0) {
+        Notify.failure(
+          'Sorry, there are no images matching your search query. Please try again.'
+        );
+        refs.gallery.innerHTML = '';
+        refs.loadMoreBtn.classList.add('hide');
+        return;
+      }
+      renderGallery(data.hits);
+    })
+    .catch(error => {
+      Notify.failure('Oops! Something went wrong. Please try again later.');
+      console.log(error);
+    });
 });
 
 refs.loadMoreBtn.addEventListener('click', onLoadMore);
-
-async function fetchImages(query, page) {
-  const url = `https://pixabay.com/api/?key=${apiKey}&q=${query}&image_type=photo&orientation=horizontal&safesearch=true&per_page=${perPage}&page=${page}`;
-  try {
-    const response = await axios.get(url);
-    const data = await response.data;
-    if (data.hits.length === 0) {
-      Notify.failure(
-        'Sorry, there are no images matching your search query. Please try again.'
-      );
-      return;
-    }
-    refs.loadMoreBtn.classList.remove('hide');
-    renderGallery(data.hits);
-  } catch (error) {
-    Notify.failure('Oops! Something went wrong. Please try again later.');
-    console.log(error);
-  }
-}
 
 function renderGallery(images) {
   if (currentPage === 1) {
@@ -82,7 +79,7 @@ function renderGallery(images) {
 `
     )
     .join('');
-  return (refs.gallery.innerHTML = markup);
+  return refs.gallery.insertAdjacentHTML('beforeend', markup);
 }
 
 async function onLoadMore() {
@@ -96,6 +93,7 @@ async function onLoadMore() {
       Notify.failure(
         'Sorry, there are no more images matching your search query.'
       );
+      refs.gallery.innerHTML = '';
       return;
     }
     renderGallery(data.hits);
@@ -108,3 +106,15 @@ async function onLoadMore() {
     console.log(error);
   }
 }
+
+window.addEventListener('scroll', () => {
+  const galleryHeight = refs.gallery.offsetHeight;
+  const windowHeight = window.innerHeight;
+  const scrollDistance = window.pageYOffset + windowHeight;
+
+  if (scrollDistance >= galleryHeight) {
+    refs.loadMoreBtn.classList.remove('hide');
+  } else {
+    refs.loadMoreBtn.classList.add('hide');
+  }
+});
