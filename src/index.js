@@ -32,6 +32,7 @@ refs.searchForm.addEventListener('submit', e => {
         return;
       }
       renderGallery(data.hits);
+      window.addEventListener('scroll', onMoveScroll);
     })
     .catch(error => {
       Notify.failure('Oops! Something went wrong. Please try again later.');
@@ -94,6 +95,7 @@ async function onLoadMore() {
         'Sorry, there are no more images matching your search query.'
       );
       refs.gallery.innerHTML = '';
+      refs.loadMoreBtn.classList.add('hide');
       return;
     }
     renderGallery(data.hits);
@@ -101,13 +103,20 @@ async function onLoadMore() {
       behavior: 'smooth',
       block: 'end',
     });
+    if (data.hits.length < 40) {
+      refs.loadMoreBtn.classList.add('hide');
+      Notify.info("We're sorry, but you've reached the end of search results.");
+      window.removeEventListener('scroll', onMoveScroll);
+    }
   } catch (error) {
     Notify.failure('Oops! Something went wrong. Please try again later.');
     console.log(error);
   }
 }
 
-window.addEventListener('scroll', () => {
+window.addEventListener('scroll', onMoveScroll);
+
+function onMoveScroll() {
   const galleryHeight = refs.gallery.offsetHeight;
   const windowHeight = window.innerHeight;
   const scrollDistance = window.pageYOffset + windowHeight;
@@ -117,4 +126,4 @@ window.addEventListener('scroll', () => {
   } else {
     refs.loadMoreBtn.classList.add('hide');
   }
-});
+}
